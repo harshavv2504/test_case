@@ -1,5 +1,3 @@
-# dashboard.py
-
 import streamlit as st
 import pandas as pd
 import os
@@ -18,13 +16,21 @@ from constants import PAGE_ICON_PATH, CSS_PATH, PROFIT_MARGIN_FACTOR # Import co
 # --- Page Configuration and Styling ---
 st.set_page_config(
     page_title="HealthKart",
-    page_icon=PAGE_ICON_PATH,
+    page_icon=str(PAGE_ICON_PATH),
     layout="wide"
 )
 load_css(CSS_PATH)
 
 # --- Load Data ---
 performance_df, orders_df, payment_log_df = load_all_data()
+
+# ADDED: Check to ensure data was loaded successfully.
+if orders_df.empty or performance_df.empty:
+    st.error("Dashboard could not be loaded. Please check data sources and refresh.")
+    st.stop()
+
+# ADDED: Main dashboard title
+st.title("HealthKart Influencer Marketing Dashboard")
 
 # --- Sidebar Filters ---
 st.sidebar.header("Dashboard Filters") # Moved directly into dashboard.py
