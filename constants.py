@@ -1,8 +1,13 @@
-# constants.py
-import os
+from pathlib import Path
+
+# --- Define Project Root ---
+# This is the crucial change. It finds the absolute path of the project's
+# root directory by locating this file (constants.py). This makes all other
+# file paths reliable, no matter where the app is run from.
+ROOT_DIR = Path(__file__).resolve().parent
 
 # --- UI Colors for KPI Cards and Charts ---
-# Define a list of light colors for KPI cards
+# Your original color constants remain unchanged.
 LIGHT_COLORS = [
     "#E3F2FD",  # Light Blue (similar to powder blue)
     "#E8F5E9",  # Mint Green (existing, good)
@@ -13,8 +18,6 @@ LIGHT_COLORS = [
     "#DDF9F8"   # Light Aqua
 ]
 
-# Define a color palette for ECharts visualizations
-# These colors will be used for different series/segments in charts.
 CHART_COLORS = [
     '#66C2A5', '#FC8D62', '#8DA0CB', '#E78AC3', '#A6D854', '#FFD92F', '#E5C494', '#B3B3B3', '#8C96C6', '#8C628C',
     '#D0D1E6', '#A1D99B', '#43A2CA', '#FED98E', '#C7E9B4', '#7FCDSA', '#FDBB84', '#FDD49E', '#E0F3DB', '#CCEBC5',
@@ -22,20 +25,27 @@ CHART_COLORS = [
 ]
 
 # --- Business Logic Constants ---
-# Percentage used for calculating Cost of Goods and Gross Profit.
+# Your original profit margin factor remains unchanged.
 PROFIT_MARGIN_FACTOR = 0.45 # Assumes 45% of total revenue is gross profit (1 - 0.55 COGS)
 
-# --- File Paths & Database Configuration ---
-# Name of the SQLite database file. It will be created in the project root.
-DB_NAME = 'data.db' 
+# --- File Paths & Database Configuration (Corrected for Deployment) ---
+# The file paths are now built from the ROOT_DIR to be absolute and reliable.
 
-# Paths for static assets and CSS file.
-PAGE_ICON_PATH = "static/New Project.png" # Make sure you have this image in a 'static' folder
-CSS_PATH = "style.css"
+# Path to the SQLite database file.
+DB_PATH = ROOT_DIR / 'data.db'
+
+# Path to the static assets folder
+STATIC_DIR = ROOT_DIR / 'static'
+
+# Path to the page icon inside the 'static' folder
+PAGE_ICON_PATH = STATIC_DIR / "New Project.png"
+
+# Path to the main CSS file
+CSS_PATH = ROOT_DIR / "style.css"
+
 
 # --- Table Styling (for Streamlit's st.dataframe if custom HTML styling is needed) ---
-# These are general CSS styles that can be applied to tables.
-# Note: With st.column_config, much of this styling is handled natively.
+# Your original table styles remain unchanged.
 TABLE_BASE_STYLES = [
     {'selector': 'th, td', 'props': [('padding', '0.2rem 0.4rem'), ('font-size', '0.85rem'), ('text-align', 'left')]},
     {'selector': 'th', 'props': [('font-weight', 'bold')]}
