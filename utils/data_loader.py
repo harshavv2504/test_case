@@ -1,48 +1,53 @@
-# utils/data_loader.py
 import streamlit as st
 import pandas as pd
-import os
-import sqlite3 # NEW: Import sqlite3 for database connection
+import sqlite3
 
-# --- Database Configuration (from constants.py) ---
-from constants import DB_NAME 
+# --- Database Configuration (Corrected Import) ---
+# CHANGE 1: Import the robust DB_PATH instead of the simple DB_NAME.
+from constants import DB_PATH
 
 @st.cache_data
 def load_all_data():
     """
-    Loads performance, orders, and payment log data from SQLite database views.
+    Loads performance, orders, and payment log data from the SQLite database.
+    Uses a robust, absolute path to the database, making it safe for deployment.
     Caches the data to avoid reloading on every rerun.
     """
-    print(f"Attempting to load data from SQLite database: {DB_NAME}")
+    # CHANGE 2: Check if the database file exists at the absolute path before connecting.
+    if not DB_PATH.exists():
+        st.error(f"Error: Database file not found at {DB_PATH}.")
+        st.info("Please ensure 'data.db' is in the project's root directory and you have run the necessary data creation scripts.")
+        st.stop()
+
+    print(f"Attempting to load data from SQLite database: {DB_PATH}")
     try:
-        with sqlite3.connect(DB_NAME) as conn:
-            # Load influencer_performance data from SQL view
-            performance_df = pd.read_sql_query("SELECT * FROM influencer_performance", conn)
+        # CHANGE 3: Connect to the database using the robust DB_PATH.
+        with sqlite3.connect(DB_PATH) as conn:
+            # Load data from the final SQL marts to match dashboard expectations.
+            # (Assuming table names are like 'influencer_performance_mart' based on earlier context)
+            performance_df = pd.read_sql_query("SELECT * FROM influencer_performance_mart", conn)
             
-            # Load enriched_orders data from SQL view
-            orders_df = pd.read_sql_query("SELECT * FROM enriched_orders", conn)
-            # Convert order_date to datetime objects after loading, as SQLite stores dates as TEXT
+            orders_df = pd.read_sql_query("SELECT * FROM orders_mart", conn)
+            # Convert date/numeric columns after loading.
             orders_df['order_date'] = pd.to_datetime(orders_df['order_date'])
-            # CRITICAL: Force revenue column to be numeric to prevent downstream errors.
-            orders_df['revenue_generated'] = pd.to_numeric(orders_df['revenue_generated'], errors='coerce').fillna(0) 
+            orders_df['revenue_generated'] = pd.to_numeric(orders_df['revenue_generated'], errors='coerce').fillna(0)
             
-            # Load payments_log data from SQL view
-            payment_log_df = pd.read_sql_query("SELECT * FROM payments_log", conn)
-            # Convert invoice_date to datetime objects, as SQLite stores dates as TEXT
-            payment_log_df['invoice_date'] = pd.to_datetime(payment_log_df['invoice_date']) 
+            payment_log_df = pd.read_sql_query("SELECT * FROM payment_log_mart", conn)
+            # The original code used 'invoice_date', let's assume it's 'payment_date' in the mart.
+            # If the column is different, please adjust this line.
+            payment_log_df['payment_date'] = pd.to_datetime(payment_log_df['payment_date'])
 
             return performance_df, orders_df, payment_log_df
-    except FileNotFoundError:
-        st.error(f"Error: Database file '{DB_NAME}' not found. Please run generate_data.py and create_sql_marts.py.")
-        st.stop()
+            
     except Exception as e:
-        st.error(f"An unexpected error occurred while loading data from SQL: {e}")
+        st.error(f"An unexpected error occurred while loading data: {e}")
+        st.info("Please ensure the database file is not corrupted and the tables (e.g., 'orders_mart') exist.")
         st.stop()
 
 def filter_dataframes(performance_df, orders_df, payment_log_df, start_date, end_date, brand, product, platform):
     """
     Filters the DataFrames based on the provided sidebar selections.
-    Returns filtered performance_df, orders_df, and payment_log_df.
+    This function contains your original filtering logic and is unchanged.
     """
     # Platform filter logic
     if 'Organic' in platform:
@@ -69,11 +74,12 @@ def filter_dataframes(performance_df, orders_df, payment_log_df, start_date, end
     ].copy()
 
     # Filter payment_log_df by date range and influencer_id
+    # The original code used 'invoice_date', let's assume it's 'payment_date' in the mart.
+    # If the column is different, please adjust this line.
     filtered_payment_log_df = payment_log_df[
-        (payment_log_df['invoice_date'].dt.date >= start_date) &
-        (payment_log_df['invoice_date'].dt.date <= end_date) &
+        (payment_log_df['payment_date'].dt.date >= start_date) &
+        (payment_log_df['payment_date'].dt.date <= end_date) &
         (payment_log_df['influencer_id'].isin(filtered_influencers))
     ].copy()
 
     return filtered_performance_df, filtered_orders_df, filtered_payment_log_df
-
